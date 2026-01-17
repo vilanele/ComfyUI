@@ -77,13 +77,14 @@ class SaveVideo(io.ComfyNode):
                 io.String.Input("filename_prefix", default="video/ComfyUI", tooltip="The prefix for the file to save. This may include formatting information such as %date:yyyy-MM-dd% or %Empty Latent Image.width% to include values from nodes."),
                 io.Combo.Input("format", options=Types.VideoContainer.as_input(), default="auto", tooltip="The format to save the video as."),
                 io.Combo.Input("codec", options=Types.VideoCodec.as_input(), default="auto", tooltip="The codec to use for the video."),
+                io.Combo.Input("acodec", options=Types.MyAudioCodec.as_input(), default="auto", tooltip="The codec to use for the audio")
             ],
             hidden=[io.Hidden.prompt, io.Hidden.extra_pnginfo],
             is_output_node=True,
         )
 
     @classmethod
-    def execute(cls, video: Input.Video, filename_prefix, format: str, codec) -> io.NodeOutput:
+    def execute(cls, video: Input.Video, filename_prefix, format: str, codec, acodec) -> io.NodeOutput:
         width, height = video.get_dimensions()
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(
             filename_prefix,
@@ -105,6 +106,7 @@ class SaveVideo(io.ComfyNode):
             os.path.join(full_output_folder, file),
             format=Types.VideoContainer(format),
             codec=codec,
+            acodec=acodec,
             metadata=saved_metadata
         )
 

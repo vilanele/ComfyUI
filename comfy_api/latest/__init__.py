@@ -7,7 +7,7 @@ from comfy_api.internal.singleton import ProxiedSingleton
 from comfy_api.internal.async_to_sync import create_sync_class
 from ._input import ImageInput, AudioInput, MaskInput, LatentInput, VideoInput
 from ._input_impl import VideoFromFile, VideoFromComponents
-from ._util import VideoCodec, VideoContainer, VideoComponents, MESH, VOXEL
+from ._util import VideoCodec, MyAudioCodec, VideoContainer, VideoComponents, MESH, VOXEL
 from . import _io_public as io
 from . import _ui_public as ui
 from comfy_execution.utils import get_executing_context
@@ -100,6 +100,7 @@ class InputImpl:
     VideoFromComponents = VideoFromComponents
 
 class Types:
+    MyAudioCodec = MyAudioCodec
     VideoCodec = VideoCodec
     VideoContainer = VideoContainer
     VideoComponents = VideoComponents

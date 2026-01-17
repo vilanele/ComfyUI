@@ -3,6 +3,7 @@ from av.container import InputContainer
 from av.subtitles.stream import SubtitleStream
 from fractions import Fraction
 from typing import Optional
+
 from .._input import AudioInput, VideoInput
 import av
 import io
@@ -10,7 +11,7 @@ import json
 import numpy as np
 import math
 import torch
-from .._util import VideoContainer, VideoCodec, VideoComponents
+from .._util import VideoContainer, VideoCodec, VideoComponents, MyAudioCodec
 
 
 def container_to_output_format(container_format: str | None) -> str | None:
@@ -250,6 +251,7 @@ class VideoFromFile(VideoInput):
         path: str | io.BytesIO,
         format: VideoContainer = VideoContainer.AUTO,
         codec: VideoCodec = VideoCodec.AUTO,
+        acodec: Optional[MyAudioCodec] = MyAudioCodec.AUTO,
         metadata: Optional[dict] = None
     ):
         if isinstance(self.__file, io.BytesIO):
@@ -257,10 +259,13 @@ class VideoFromFile(VideoInput):
         with av.open(self.__file, mode='r') as container:
             container_format = container.format.name
             video_encoding = container.streams.video[0].codec.name if len(container.streams.video) > 0 else None
+            audio_encoding = container.streams.audio[0].codec.name if len(container.streams.audio) > 0 else None
             reuse_streams = True
             if format != VideoContainer.AUTO and format not in container_format.split(","):
                 reuse_streams = False
             if codec != VideoCodec.AUTO and codec != video_encoding and video_encoding is not None:
+                reuse_streams = False
+            if acodec != MyAudioCodec.AUTO and acodec != audio_encoding and audio_encoding is not None:
                 reuse_streams = False
 
             if not reuse_streams:
@@ -270,6 +275,7 @@ class VideoFromFile(VideoInput):
                     path,
                     format=format,
                     codec=codec,
+                    acodec=acodec,
                     metadata=metadata
                 )
 
@@ -330,12 +336,13 @@ class VideoFromComponents(VideoInput):
         path: str,
         format: VideoContainer = VideoContainer.AUTO,
         codec: VideoCodec = VideoCodec.AUTO,
+        acodec: MyAudioCodec = MyAudioCodec.AUTO,
         metadata: Optional[dict] = None
     ):
-        if format != VideoContainer.AUTO and format != VideoContainer.MP4:
-            raise ValueError("Only MP4 format is supported for now")
-        if codec != VideoCodec.AUTO and codec != VideoCodec.H264:
-            raise ValueError("Only H264 codec is supported for now")
+        # if format != VideoContainer.AUTO and format != VideoContainer.MP4:
+        #     raise ValueError("Only MP4 format is supported for now")
+        # if codec != VideoCodec.AUTO and codec != VideoCodec.H264:
+        #     raise ValueError("Only H264 codec is supported for now")
         extra_kwargs = {}
         if isinstance(format, VideoContainer) and format != VideoContainer.AUTO:
             extra_kwargs["format"] = format.value
@@ -347,7 +354,7 @@ class VideoFromComponents(VideoInput):
 
             frame_rate = Fraction(round(self.__components.frame_rate * 1000), 1000)
             # Create a video stream
-            video_stream = output.add_stream('h264', rate=frame_rate)
+            video_stream = output.add_stream('h264' if codec == VideoCodec.AUTO else codec, rate=frame_rate)
             video_stream.width = self.__components.images.shape[2]
             video_stream.height = self.__components.images.shape[1]
             video_stream.pix_fmt = 'yuv420p'
@@ -357,7 +364,7 @@ class VideoFromComponents(VideoInput):
             audio_stream: Optional[av.AudioStream] = None
             if self.__components.audio:
                 audio_sample_rate = int(self.__components.audio['sample_rate'])
-                audio_stream = output.add_stream('aac', rate=audio_sample_rate)
+                audio_stream = output.add_stream('aac' if acodec == MyAudioCodec.AUTO else acodec, rate=audio_sample_rate)
 
             # Encode video
             for i, frame in enumerate(self.__components.images):

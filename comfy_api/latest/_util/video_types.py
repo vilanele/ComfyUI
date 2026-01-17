@@ -16,9 +16,23 @@ class VideoCodec(str, Enum):
         """
         return [member.value for member in cls]
 
+class MyAudioCodec(str, Enum):
+    AUTO = "auto"
+    AAC = "aac"
+    OPUS = "libopus"
+    PCM_S16LE = "pcm_s16le"
+
+    @classmethod
+    def as_input(cls) -> list[str]:
+        """
+        Returns a list of codec names that can be used as node input.
+        """
+        return [member.value for member in cls]
+
 class VideoContainer(str, Enum):
     AUTO = "auto"
     MP4 = "mp4"
+    MOV = "mov"
 
     @classmethod
     def as_input(cls) -> list[str]:
@@ -36,6 +50,8 @@ class VideoContainer(str, Enum):
             value = cls(value)
         if value == VideoContainer.MP4 or value == VideoContainer.AUTO:
             return "mp4"
+        elif value == VideoContainer.MOV:
+            return "mov"
         return ""
 
 @dataclass
